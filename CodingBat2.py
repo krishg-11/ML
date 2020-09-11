@@ -22,7 +22,7 @@ def array_front9(nums):
   return 9 in nums[:4]
 
 def array123(nums):
-  return "1, 2, 3" in str(nums)
+  return '1, 2, 3' in str(nums)
 
 def string_match(a, b):
   return sum(a[i:i+2]==b[i:i+2] for i in range(len(a)-1))
@@ -70,13 +70,13 @@ def count_code(str): #range(len(str)-x) is bum
   # return sum(str.count(f'co{chr(k)}e') for k in range(65,91))
 
 def end_other(a, b):
-  return a.lower()==b.lower()[-len(a):] or b.lower()==a.lower()[-len(b):]
-  # return (a:=a.lower())==(b:=b.lower())[-len(a):] or b==a[-len(b):]
-  # return a.lower()[-min(len(a),len(b)):]==b.lower()[-min(len(a), len(b)):]
-  # return a.lower()[x:=-min(len(a),len(b)):]==b.lower()[x:]
+  return a.lower()==b.lower()[-len(a)+0:] or b.lower()==a.lower()[-len(b)+0:]
+  # return (a:=a.lower())==(b:=b.lower())[-len(a)+0:] or b==a[-len(b)+0:]
+  # return a.lower()[-min(len(a),len(b))+0:]==b.lower()[-min(len(a), len(b))+0:]
+  # return a.lower()[x:=-min(len(a),len(b))+0:]==b.lower()[x:]
 
 
-#doesn't work when starts with xyz and ends with . e.g. "xyzaaaaaa."
+#doesn't work when starts with xyz and ends with . e.g. 'xyzaaaaaa.'
 #range(len(str)-x) is bum. True in is stupid (any function)?? be better
 def xyz_there(str):
   return str.count('xyz')-str.count('.xyz')>0
