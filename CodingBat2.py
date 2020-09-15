@@ -22,7 +22,7 @@ def array_front9(nums):
   return 9 in nums[:4]
 
 def array123(nums): #improve ^
-  return sum(nums[i:i+3]==[1,2,3] for i in range(len(nums)))>0
+  return any(nums[i:i+3]==[1,2,3] for i in range(len(nums)))
   # return True in [nums[i:i+3]==[1,2,3] for i in range(len(nums))]
   # return '1, 2, 3' in str(nums) -- doesn't work for [1,21,2,3]
   # return True in [nums[i]==1 and nums[i+1]==2 and nums[i+2]==3 for i in range(len(nums)-2)
@@ -39,8 +39,9 @@ def make_bricks(small, big, goal): #improve ^^
 def lone_sum(a, b, c):
   return sum(x for x in [a,b,c] if [a,b,c].count(x)<2)
 
-def lucky_sum(a, b, c): #improve ^^ -- better
+def lucky_sum(a, b, c):
   return sum((x:=[a,b,c,13])[:x.index(13)])
+  # return sum([a,b,c,13][:[a,b,c,13].index(13)])
   # return sum([a,b,c][i] for i in [0,1,2] if 13 not in [a,b,c][:i+1])
   # return sum([a,b,c][i] for i in range(3) if 13 not in [a,b,c][:i+1])
   # return sum(x for i,x in enumerate([a,b,c]) if 13 not in [a,b,c][:i+1])
@@ -69,22 +70,22 @@ def cat_dog(str): #improve ^
   return str.count('cat')==str.count('dog')
   # return len({str.count(x) for x in ['cat','dog']})==1
 
-def count_code(str): #range(len(str)-x) is bum ^
-  return sum(str.count('co'+chr(k)+'e') for k in range(48,123))
+def count_code(str): #^
+  return sum(str.count(f'co{chr(k)}e') for k in range(48,123))
+  # return sum(str.count('co'+chr(k)+'e') for k in range(48,123))
   # return sum(str[i:i+2]=='co' and str[i+3]=='e' for i in range(len(str)-3))
-  # return sum(str.count(f'co{chr(k)}e') for k in range(65,91))
 
-def end_other(a, b): #improve ^ -- better
+def end_other(a, b): #improve ^
   return a.lower()[(x:=-min(len(a),len(b)))+0:]==b.lower()[x:]
   # return a.lower()==b.lower()[-len(a)+0:] or b.lower()==a.lower()[-len(b)+0:]
   # return (a:=a.lower())==(b:=b.lower())[-len(a)+0:] or b==a[-len(b)+0:]
   # return a.lower()[-min(len(a),len(b))+0:]==b.lower()[-min(len(a),len(b))+0:]
 
 
-def xyz_there(str): #improve ^ -- better
+def xyz_there(str): #improve ^
   return str.count('xyz')>str.count('.xyz')
 
-def count_evens(nums): #improve ^ -- better
+def count_evens(nums):
   return sum(~i&1 for i in nums)
   # return sum(i%2==0 for i in nums)
   # return sum(i==i//2*2 for i in nums)
@@ -103,7 +104,7 @@ def sum13(nums): #improve ^
 def sum67(nums): #improve ^
   return sum(x for i,x in enumerate(nums) if 6 not in nums[:i+1] or 7 in nums[[j for j,z in enumerate(nums) if z==6 and j<=i][-1]:i])
 
-def has22(nums):
-  return sum(nums[i:i+2]==[2,2] for i in range(len(nums)))>0
+def has22(nums): # (1)
+  return any(nums[i:i+2]==[2,2] for i in range(len(nums)))
   # return '2, 2' in str(nums)
   # return True in [nums[i:i+2]==[2,2] for i in range(len(nums))]
