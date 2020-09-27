@@ -12,7 +12,7 @@ def string_bits(str):
 def string_splosion(str):
   return ''.join(str[:i] for i in range(len(str)+1))
 
-def last2(str): #improve ^
+def last2(str): #improve ^ -- use zip
   return sum(str[i:i+2]==str[-2:] for i in range(len(str)-2))
 
 def array_count9(nums):
@@ -21,8 +21,9 @@ def array_count9(nums):
 def array_front9(nums):
   return 9 in nums[:4]
 
-def array123(nums): #improve ^
-  return any(nums[i:i+3]==[1,2,3] for i in range(len(nums)))
+def array123(nums): #improve ^ --
+  # return any(nums[i:i+3]==[1,2,3] for i in range(len(nums)))
+  return " 1, 2, 3," in str([0,*nums,4)
   # return True in [nums[i:i+3]==[1,2,3] for i in range(len(nums))]
   # return '1, 2, 3' in str(nums) -- doesn't work for [1,21,2,3]
   # return True in [nums[i]==1 and nums[i+1]==2 and nums[i+2]==3 for i in range(len(nums)-2)
@@ -41,6 +42,7 @@ def lone_sum(a, b, c):
 
 def lucky_sum(a, b, c):
   return sum((x:=[a,b,c,13])[:x.index(13)])
+  # return sum([a,b,c][:[a,b,c,13].index(13)])
   # return sum([a,b,c,13][:[a,b,c,13].index(13)])
   # return sum([a,b,c][i] for i in [0,1,2] if 13 not in [a,b,c][:i+1])
   # return sum([a,b,c][i] for i in range(3) if 13 not in [a,b,c][:i+1])
@@ -95,7 +97,8 @@ def big_diff(nums):
   return max(nums)-min(nums)
 
 def centered_average(nums):#improve ^
-  return sum(sorted(nums)[1:-1])//(len(nums)-2)
+  return sum(x:=sorted(nums)[1:-1])//len(x)
+  # return sum(sorted(nums)[1:-1])//(len(nums)-2)
   # return (sum(nums)-min(nums)-max(nums))//(len(nums)-2)
 
 def sum13(nums): #improve ^
