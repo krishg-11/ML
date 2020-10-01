@@ -7,7 +7,7 @@ import math
 def zero(x, f, f1):
     while abs(dx:=f(x)/f1(x)) >= 0.0000001:
         x -= dx*0.1
-    return x
+    return x,f(x)
 
 def extrema(x, f, f1, f2):
     while abs(dx:=f1(x)/f2(x)) >= 0.0000001:
@@ -32,5 +32,5 @@ functions = [
 
 
 f,f1,f2 = functions[-1]
-print("The value of the zero is : ", "%.6f" % zero(x0, f, f1))
+print("The value of the zero is: (%.6f, %.6f)" % zero(x0, f, f1))
 print(f"The local minimum is at: (%.6f, %.6f)" % extrema(x0, f, f1, f2))
