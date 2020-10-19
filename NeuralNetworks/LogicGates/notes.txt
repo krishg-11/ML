@@ -1,0 +1,5 @@
+'''
+T1 = linear
+T2 = relu
+T3 = sigmoid (logistic)
+T4 = sigmoid from -1-1    -1 + 2/(1+e^x)
