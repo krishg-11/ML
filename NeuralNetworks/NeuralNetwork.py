@@ -1,5 +1,6 @@
+import sys; args=sys.argv[1:]
+#Krish Ganotra -- BackProp2
 import re
-import sys
 import math
 import random
 import time
@@ -7,18 +8,18 @@ import time
 r = 1
 greater = True
 
-input = sys.argv[1]
-regex = re.search(r"(>|<)=?([.0-9]+)", input)
+input = args[0]
+regex = re.search(r'(>|<)=?([.0-9]+)', input)
 
 greater, r = regex.groups()
-greater = greater==">"
+greater = greater=='>'
 r = float(r)
 
 
 global transType
-transfers = {"T1":lambda x: x, "T2": lambda x: max(0,x), "T3": lambda x: 1/(1+math.exp(-x)), "T4": lambda x: (-1 + 2/(1+math.exp(-x)))}
-transDerivs = {"T1": lambda y:1, "T2": lambda y: 1 if y>1 else 0, "T3": lambda y: y*(1-y), "T4": lambda y: (1-y*y)/2}
-transType = "T3"
+transfers = {'T1':lambda x: x, 'T2': lambda x: max(0,x), 'T3': lambda x: 1/(1+math.exp(-x)), 'T4': lambda x: (-1 + 2/(1+math.exp(-x)))}
+transDerivs = {'T1': lambda y:1, 'T2': lambda y: 1 if y>1 else 0, 'T3': lambda y: y*(1-y), 'T4': lambda y: (1-y*y)/2}
+transType = 'T3'
 
 def generateData(r, greater):
     testCases = []
@@ -119,13 +120,15 @@ while(True):
     if(sum(E)<bestE):
         bestE = sum(E)
         if(lastTime > 100000):
-            print()
-            print("error:", sum(E))
-            print("Accuracy:", 1-bestAcc)
-            print("error", bestE)
-            print("Layer cts:", layerLens)
-            print("Weights:")
-            for x in weights: print(x)
+            outString = "\n"
+            outString += f'error: {sum(E)}\n'
+            outString += f'Accuracy: {1-bestAcc}\n'
+            outString += f'error {bestE}\n'
+            outString += f'Layer cts: {layerLens}\n'
+            outString += 'Weights:\n'
+            for x in weights: outString += f'{x}\n'
+            
+            print(outString)
 
             lastTime = 0
     if(newAcc > 0.95):
