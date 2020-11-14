@@ -1,0 +1,4 @@
+xC BC xD BD xE BE xF BF xG BG
+CI DI EI FI GI CJ DJ EJ FJ GJ
+IK JK
+Kx2
