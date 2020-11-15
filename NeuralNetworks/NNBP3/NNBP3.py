@@ -39,15 +39,15 @@ for line in squarerFile:
 SquarerLayerLens = [2]
 for i in range(len(SquarerWeights)):
     SquarerLayerLens.append(len(SquarerWeights[i])//SquarerLayerLens[i])
-print("SquarerLayerLens:", SquarerLayerLens)
-print("Squarer Weights")
+print('SquarerLayerLens:', SquarerLayerLens)
+print('Squarer Weights')
 for x in SquarerWeights: print(x)
 print()
 
 weights = []
 layerLens = [3] + [x*2 for x in SquarerLayerLens[1:-2]] + [2, 1, 1]
 
-SquarerWeights[0] = [x/r for x in SquarerWeights[0]]
+# SquarerWeights[0] = [x if i%2 else x/r for i,x in enumerate(SquarerWeights[0])]
 weights.append(insert(SquarerWeights[0],0,1,3) + insert(SquarerWeights[0],0,0,3))
 
 for i in range(1, len(SquarerWeights)-1):
@@ -65,13 +65,13 @@ for i in range(1, len(SquarerWeights)-1):
 
 weights.append(SquarerWeights[-1]*2)
 
-e = math.e
 if(greater):
-    weights.append([(1+e)/2/e])
+    e = math.exp(-r*r)
 else:
     weights[-1] = [-x for x in weights[-1]]
-    weights.append([(1+e)/2])
+    e = math.exp(r*r)
+weights.append([(1+e)/2])
 
-print("Layer cts:", layerLens)
-print("Weights:")
+print('Layer cts:', layerLens)
+print('Weights:')
 for layer in weights: print(layer)
