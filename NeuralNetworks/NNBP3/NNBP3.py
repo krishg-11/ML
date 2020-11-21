@@ -1,5 +1,5 @@
 import sys; args=sys.argv[1:]
-#Krish Ganotra -- BackProp2
+#Krish Ganotra -- BackProp3
 import re
 import math
 import random
@@ -16,11 +16,13 @@ def insert(list, element, startIndex, stepIndex):
 equation = args[1]
 regex = re.search(r'(>|<)=?([.0-9]+)', equation)
 
-r = 1
+r2 = 1
 greater = True
-greater, r = regex.groups()
+greater, r2 = regex.groups()
 greater = greater=='>'
-r = float(r)
+r2 = float(r2)
+r = r2**(1/2)
+print("Equation:", args[1])
 
 
 global transType
@@ -30,15 +32,19 @@ transType = 'T3'
 
 squarerFile = open(args[0])
 SquarerWeights = []
-# for layer in squarerFile:
-#     SquarerWeights.append([x for x in layer.strip().split(' ')])
+
+print("Squarer File:")
 for line in squarerFile:
+    line = line.strip()
+    print(line)
     layer = [float(w) for w in re.findall(r'-?\d*[.]?\d*', line) if(w)]
     if(layer): SquarerWeights.append(layer)
 
+print()
 SquarerLayerLens = [2]
 for i in range(len(SquarerWeights)):
     SquarerLayerLens.append(len(SquarerWeights[i])//SquarerLayerLens[i])
+
 print('SquarerLayerLens:', SquarerLayerLens)
 print('Squarer Weights')
 for x in SquarerWeights: print(x)
@@ -47,7 +53,7 @@ print()
 weights = []
 layerLens = [3] + [x*2 for x in SquarerLayerLens[1:-2]] + [2, 1, 1]
 
-# SquarerWeights[0] = [x if i%2 else x/r for i,x in enumerate(SquarerWeights[0])]
+SquarerWeights[0] = [x if i%2 else x/r for i,x in enumerate(SquarerWeights[0])]
 weights.append(insert(SquarerWeights[0],0,1,3) + insert(SquarerWeights[0],0,0,3))
 
 for i in range(1, len(SquarerWeights)-1):
@@ -66,11 +72,10 @@ for i in range(1, len(SquarerWeights)-1):
 weights.append(SquarerWeights[-1]*2)
 
 if(greater):
-    e = math.exp(-r*r)
+    weights.append([(1+math.e)/(2*math.e)])
 else:
     weights[-1] = [-x for x in weights[-1]]
-    e = math.exp(r*r)
-weights.append([(1+e)/2])
+    weights.append([(1+math.e)/2])
 
 print('Layer cts:', layerLens)
 print('Weights:')
