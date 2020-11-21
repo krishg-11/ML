@@ -36,29 +36,25 @@ def categorize(data, centroids): #given list of centroids and data, returns cent
         rgb = pixel[0]
         distances = []
         broken = False
+        count = 0
         for cent in centroids:
             dist = distance(rgb, cent)
-            distances.append(dist)
+            distances.append((dist,count))
             if(dist < minCentDist):
-                categories[len(distances)-1].append(pixel)
+                categories[count].append(pixel)
                 broken = True
                 break
+            count += 1
         if(broken): continue
-        closest = min([(dist,pos) for pos,dist in enumerate(distances)])[1]
+        closest = min(distances)[1]
         categories[closest].append(pixel)
     return categories
 
 def reposition(categories): #given centroids dictionary, returns centroid list of new positions
     newCentroids = []
     for cent in categories:
-        sums = [0 for i in range(len(categories[cent][0][0]))]
-        total = 0
-        for pixel in categories[cent]:
-            rgb = pixel[0]
-            for i in range(len(rgb)):
-                sums[i]+=rgb[i]
-            total+=1
-        averages = [sum/total for sum in sums]
+        pointDim = len(categories[cent][0][0]) # 3 since there are 3 channels (r,g,b)
+        averages = [sum(pixel[0][i] for pixel in categories[cent])/len(categories[cent]) for i in range(pointDim)]
         newCentroids.append(averages)
     return newCentroids
 
@@ -76,22 +72,23 @@ def areaFill(pix, x, y):
                     queue.append((newx,newy))
                     seen.add((newx,newy))
 
-def initalizeCentroids(pixels, count):
+def initalizeCentroids(pixelNL, setPixelNL, count): #Better initialization method smh
     kcoords = []
     for i in range(count):
-        add = random.choice(pixels)
+        add = random.choice(pixelNL)
         while(add in kcoords):
-            add = random.choice(pixels)
+            add = random.choice(pixelNL)
         kcoords.append(add)
     return kcoords
 
-
-    # kcoords = [random.choice(pixels)]
-    # prob = [distance(pixel, kcoords[0]) for pixel in pixels]
+    # pixelNL = list(setPixelNL) #make sure kcoords are unique
+    # kcoords = [pixelNL[int(random.random()*len(pixelNL))]]
+    # dists = [(0,pixel) for pixel in pixelNL]
     # for i in range(count-1):
     #     print(kcoords)
-    #     kcoords.append(random.choices(population=pixels, weights=prob)[0])
-    #     prob = [min(distance(pixel, kcoords[i]) for i in range(len(kcoords))) for pixel in pixels]
+    #     dists = [(dists[i][0]+distance(pixel, kcoords[-1]), pixel) for i,pixel in enumerate(pixelNL)]
+    #     kcoords.append(max(dists)[1])
+    #
     #
     # return kcoords
 
@@ -104,7 +101,7 @@ for input in sys.argv[1:]:
     else:
         imageInfo = input
 
-if("http" in imageInfo):
+if('http' in imageInfo):
     imageInfo = io.BytesIO(urllib.request.urlopen(imageInfo).read())
 img = Image.open(imageInfo)
 pix = img.load()
@@ -114,22 +111,22 @@ pixels = [[pix[x,y], (x,y)] for x in range(img.size[0]) for y in range(img.size[
 pixelNoLocation = [(rgb[0],rgb[1],rgb[2]) for rgb,pos in pixels]
 setPixelNL = set(pixelNoLocation)
 
-print("size:", img.size[0], "x", img.size[1])
-print("pixels:", len(pixels))
-print("distinct pixel count:", len(setPixelNL))
+print('size:', img.size[0], 'x', img.size[1])
+print('pixels:', len(pixels))
+print('distinct pixel count:', len(setPixelNL))
 counts = {pixel:0 for pixel in setPixelNL}
 for pixel in pixelNoLocation:
     counts[pixel] += 1
 # mostCommon = max((pixelNoLocation.count(pixel), pixel) for pixel in setPixelNL)
 mostCommon = max(counts, key=counts.get)
-print("most common pixel:", mostCommon, "=>", counts[mostCommon])
+print('most common pixel:', mostCommon, '=>', counts[mostCommon])
 
-kcoords = initalizeCentroids(pixelNoLocation, k)
-print("random means:", kcoords, end="\n\n")
+kcoords = initalizeCentroids(pixelNoLocation, setPixelNL, k)
+print('random means:', kcoords, end='\n\n')
 
 categories = categorize(pixels, kcoords)
 net = [len(categories[k]) for k in categories]
-print("starting sizes", net)
+print('starting sizes', net)
 
 count = 0
 while(net != [0]*k):
@@ -138,19 +135,19 @@ while(net != [0]*k):
     newCategories = categorize(pixels, kcoords)
     net = [len(newCategories[k]) - len(categories[k]) for k in categories]
     categories = newCategories
-    print("diff {}: {}".format(count,net))
+    print(f'diff {count}: {net}')
 
 print()
-print("Final means:")
+print('Final means:')
 count = 0
 for cent in categories:
     count+=1
-    print("{}: {} => {}".format(count,tuple(kcoords[cent]),len(categories[cent])))
+    print(f'{count}: {tuple(kcoords[cent])} => {len(categories[cent])}')
     for point in categories[cent]:
         x,y = point[1]
-        pix[x,y] = tuple([round(x) for x in kcoords[cent]])
+        pix[x,y] = tuple([round(channel) for channel in kcoords[cent]])
 
-img.save("kmeans/{}.png".format("2021kganotra"), "PNG")
+img.save('kmeans/{}.png'.format('2021kganotra'), 'PNG')
 
 kcoords = [(round(rgb[0]), round(rgb[1]), round(rgb[2])) for rgb in kcoords]
 seen = set()
@@ -162,10 +159,10 @@ for x in range(img.size[0]):
         areaFill(pix, x, y)
         regionCount[pix[x,y]] += 1
 
-print("Region counts: ", end="")
+print('Region counts: ', end='')
 count = 0
-print(", ".join([str(x) for x in regionCount.values()]))
+print(', '.join([str(x) for x in regionCount.values()]))
 
 
-print("total time:", time.time()-start)
+print('total time:', time.time()-start)
 #img.show()
