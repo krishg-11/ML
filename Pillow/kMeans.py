@@ -19,9 +19,14 @@ import sys
 import time
 
 global seen
+global distances
+distances = {}
 
 def distance(p1, p2): #finds the distance between p1 and p2
-    return sum((p1[i]-p2[i])**2 for i in range(len(p1)))
+    global distances
+    if((p1,p2) not in distances):
+        distances[(p1,p2)] = sum((p1[i]-p2[i])**2 for i in range(len(p1)))
+    return distances[(p1,p2)]
 
 def categorize(data, centroids): #given list of centroids and data, returns centroids dictionary
     categories = {i:[] for i in range(len(centroids))}
@@ -32,8 +37,12 @@ def categorize(data, centroids): #given list of centroids and data, returns cent
             centDistances.append(distance(centroids[cent1], centroids[cent2]))
     minCentDist = min(centDistances)/4
 
+    seenRGB = {}
     for pixel in data:
         rgb = pixel[0]
+        if(rgb in seenRGB):
+            categories[seenRGB[rgb]].append(pixel)
+            continue
         distances = []
         broken = False
         count = 0
@@ -42,19 +51,21 @@ def categorize(data, centroids): #given list of centroids and data, returns cent
             distances.append((dist,count))
             if(dist < minCentDist):
                 categories[count].append(pixel)
+                seenRGB[rgb] = count
                 broken = True
                 break
             count += 1
         if(broken): continue
         closest = min(distances)[1]
         categories[closest].append(pixel)
+        seenRGB[rgb] = closest
     return categories
 
 def reposition(categories): #given centroids dictionary, returns centroid list of new positions
     newCentroids = []
     for cent in categories:
         pointDim = len(categories[cent][0][0]) # 3 since there are 3 channels (r,g,b)
-        averages = [sum(pixel[0][i] for pixel in categories[cent])/len(categories[cent]) for i in range(pointDim)]
+        averages = tuple([sum(pixel[0][i] for pixel in categories[cent])/len(categories[cent]) for i in range(pointDim)])
         newCentroids.append(averages)
     return newCentroids
 
@@ -73,24 +84,25 @@ def areaFill(pix, x, y):
                     seen.add((newx,newy))
 
 def initalizeCentroids(pixelNL, setPixelNL, count): #Better initialization method smh
-    kcoords = []
-    for i in range(count):
-        add = random.choice(pixelNL)
-        while(add in kcoords):
-            add = random.choice(pixelNL)
-        kcoords.append(add)
-    return kcoords
+    # # RANDOM
+    # kcoords = set()
+    # uniquePixelsNL = list(setPixelNL)
+    # for i in range(count):
+    #     add = random.choice(uniquePixelsNL)
+    #     while(add in kcoords):
+    #         add = random.choice(uniquePixelsNL)
+    #     kcoords.add(add)
+    # return list(kcoords)
 
-    # pixelNL = list(setPixelNL) #make sure kcoords are unique
-    # kcoords = [pixelNL[int(random.random()*len(pixelNL))]]
-    # dists = [(0,pixel) for pixel in pixelNL]
-    # for i in range(count-1):
-    #     print(kcoords)
-    #     dists = [(dists[i][0]+distance(pixel, kcoords[-1]), pixel) for i,pixel in enumerate(pixelNL)]
-    #     kcoords.append(max(dists)[1])
-    #
-    #
-    # return kcoords
+    # KMEANS++
+    uniquePixelsNL = list(setPixelNL) #make sure kcoords are unique
+    kcoords = [pixelNL[int(random.random()*len(pixelNL))]]
+    for i in range(count-1):
+        # dists = [(min(distance(pixel, kcoord) for kcoord in kcoords), pixel) for pixel in uniquePixelsNL]
+        # kcoords.append(max(dists)[1])
+        dists =   [min(distance(pixel, kcoord) for kcoord in kcoords) for pixel in uniquePixelsNL]
+        kcoords.append(random.choices(uniquePixelsNL, weights=dists)[0])
+    return kcoords
 
 
 start = time.time()
@@ -122,9 +134,11 @@ mostCommon = max(counts, key=counts.get)
 print('most common pixel:', mostCommon, '=>', counts[mostCommon])
 
 kcoords = initalizeCentroids(pixelNoLocation, setPixelNL, k)
-print('random means:', kcoords, end='\n\n')
+print('random means:', kcoords)
+print("Centroids initialized; time taken so far", time.time()-start, end='\n\n')
 
 categories = categorize(pixels, kcoords)
+
 net = [len(categories[k]) for k in categories]
 print('starting sizes', net)
 
@@ -135,7 +149,7 @@ while(net != [0]*k):
     newCategories = categorize(pixels, kcoords)
     net = [len(newCategories[k]) - len(categories[k]) for k in categories]
     categories = newCategories
-    print(f'diff {count}: {net}')
+    print(f'diff {count}: {net} -- time taken:', time.time()-start)
 
 print()
 print('Final means:')
