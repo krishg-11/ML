@@ -1,73 +1,67 @@
-'''
-input: k-value image(file/url)
-RGB values of each pixel as data set, group into k groups
-replace each pixel with the rgb value of its nearest mean
-
-K-Means:
-1. Initialize centroids
-2. categorize every data point to a centroid
-3. Adjust centroid position
-
-for each data point, know the rgb values
-
-'''
+import sys; args=sys.argv[1:]
+#Krish Ganotra - kmeans rgb
 import random
 from PIL import Image
-import urllib.request
-import io
-import sys
 import time
 
 global seen
-global distances
-distances = {}
 
 def distance(p1, p2): #finds the distance between p1 and p2
-    global distances
-    if((p1,p2) not in distances):
-        distances[(p1,p2)] = sum((p1[i]-p2[i])**2 for i in range(len(p1)))
-    return distances[(p1,p2)]
+    return sum((p1[i]-p2[i])**2 for i in range(len(p1)))
 
-def categorize(data, centroids): #given list of centroids and data, returns centroids dictionary
-    categories = {i:[] for i in range(len(centroids))}
-
+def categorize_and_reposition(rgbDict, centroids):
     centDistances = []
     for cent1 in range(len(centroids)):
         for cent2 in range(cent1+1, len(centroids)):
             centDistances.append(distance(centroids[cent1], centroids[cent2]))
     minCentDist = min(centDistances)/4
 
-    seenRGB = {}
-    for pixel in data:
-        rgb = pixel[0]
-        if(rgb in seenRGB):
-            categories[seenRGB[rgb]].append(pixel)
-            continue
-        distances = []
-        broken = False
-        count = 0
-        for cent in centroids:
-            dist = distance(rgb, cent)
-            distances.append((dist,count))
-            if(dist < minCentDist):
-                categories[count].append(pixel)
-                seenRGB[rgb] = count
-                broken = True
-                break
-            count += 1
-        if(broken): continue
-        closest = min(distances)[1]
-        categories[closest].append(pixel)
-        seenRGB[rgb] = closest
-    return categories
+    centCounts = [0]*len(centroids)
+    centSums = [[0,0,0] for i in range(len(centroids))]
+    for rgb in rgbDict:
+        closestCentInd = -1
+        occurences, centInd = rgbDict[rgb]
+        distances = [(distance(rgb, centroids[centInd]), centInd)]
+        if(distances[0][0] < minCentDist):
+            closestCentInd = centInd
+        else:
+            for icent, cent in enumerate(centroids):
+                if(icent == centInd): continue
+                dist = distance(cent, rgb)
+                if(dist < minCentDist):
+                    closestCentInd = icent
+                    break
+                distances.append((dist, icent))
+        if(closestCentInd == -1):
+            closestCentInd = min(distances)[1]
 
-def reposition(categories): #given centroids dictionary, returns centroid list of new positions
-    newCentroids = []
-    for cent in categories:
-        pointDim = len(categories[cent][0][0]) # 3 since there are 3 channels (r,g,b)
-        averages = tuple([sum(pixel[0][i] for pixel in categories[cent])/len(categories[cent]) for i in range(pointDim)])
-        newCentroids.append(averages)
-    return newCentroids
+        rgbDict[rgb] = [occurences, closestCentInd]
+        centCounts[closestCentInd] += occurences
+        for i in range(3):
+            centSums[closestCentInd][i] += occurences*rgb[i]
+    new_centroids = []
+    for centInd in range(len(centroids)):
+        new_cent = tuple(centSums[centInd][i]/centCounts[centInd] for i in range(3))
+        new_centroids.append(new_cent)
+    return rgbDict, centCounts, new_centroids
+
+
+
+# def reposition(rgbDict, k): #given rgb dictionary, returns centroid list of new positions
+#     rgbLen = 3
+#     centroids = [[0]*rgbLen]*k
+#     centroidCounts = [0]*k
+#     for rgb in rgbDict:
+#         occurences, centInd = rgbDict[rgb]
+#         centroids[centInd] = [centroids[centInd][i]+rgb[i]*occurences for i in range(rgbLen)]
+#         centroidCounts[centInd] += occurences
+#     return [tuple(centroids[centInd][i]/centroidCounts[centInd] for i in range(rgbLen)) for centInd in range(k)]
+
+
+'''
+{(rgb): [occurences, centroidIndex]}
+[centroid1, centroid2,...]
+'''
 
 def areaFill(pix, x, y):
     global seen
@@ -83,25 +77,23 @@ def areaFill(pix, x, y):
                     queue.append((newx,newy))
                     seen.add((newx,newy))
 
-def initalizeCentroids(pixelNL, setPixelNL, count): #Better initialization method smh
-    # # RANDOM
-    # kcoords = set()
-    # uniquePixelsNL = list(setPixelNL)
-    # for i in range(count):
-    #     add = random.choice(uniquePixelsNL)
-    #     while(add in kcoords):
-    #         add = random.choice(uniquePixelsNL)
-    #     kcoords.add(add)
-    # return list(kcoords)
+def initalizeCentroids(rgbDict, count):
+    # kcoords = [random.choice(allrgb)]
+    # prob = [distance(pixel, kcoords[0]) for pixel in allrgb]
+    # for i in range(count-1):
+    #     print(kcoords)
+    #     kcoords.append(random.choices(population=allrgb, weights=prob)[0])
+    #     prob = [min(distance(pixel, kcoords[i]) for i in range(len(kcoords))) for pixel in pixels]
+    #
+    # return kcoords
 
-    # KMEANS++
-    uniquePixelsNL = list(setPixelNL) #make sure kcoords are unique
-    kcoords = [pixelNL[int(random.random()*len(pixelNL))]]
-    for i in range(count-1):
-        # dists = [(min(distance(pixel, kcoord) for kcoord in kcoords), pixel) for pixel in uniquePixelsNL]
-        # kcoords.append(max(dists)[1])
-        dists =   [min(distance(pixel, kcoord) for kcoord in kcoords) for pixel in uniquePixelsNL]
-        kcoords.append(random.choices(uniquePixelsNL, weights=dists)[0])
+    allrgb = list(rgbDict.keys())
+    kcoords = []
+    for i in range(count):
+        add = random.choice(allrgb)
+        while(add in kcoords):
+            add = random.choice(allrgb)
+        kcoords.append(add)
     return kcoords
 
 
@@ -113,59 +105,53 @@ for input in sys.argv[1:]:
     else:
         imageInfo = input
 
-if('http' in imageInfo):
-    imageInfo = io.BytesIO(urllib.request.urlopen(imageInfo).read())
 img = Image.open(imageInfo)
 pix = img.load()
 
 #set up data and centroids
-pixels = [[pix[x,y], (x,y)] for x in range(img.size[0]) for y in range(img.size[1])]
-pixelNoLocation = [(rgb[0],rgb[1],rgb[2]) for rgb,pos in pixels]
-setPixelNL = set(pixelNoLocation)
+rgbDict = {}
+for x in range(img.size[0]):
+    for y in range(img.size[1]):
+        rgb = pix[x,y]
+        if(rgb in rgbDict): rgbDict[rgb][0] += 1
+        else: rgbDict[rgb] = [1, 0]
 
 print('size:', img.size[0], 'x', img.size[1])
-print('pixels:', len(pixels))
-print('distinct pixel count:', len(setPixelNL))
-counts = {pixel:0 for pixel in setPixelNL}
-for pixel in pixelNoLocation:
-    counts[pixel] += 1
-# mostCommon = max((pixelNoLocation.count(pixel), pixel) for pixel in setPixelNL)
-mostCommon = max(counts, key=counts.get)
-print('most common pixel:', mostCommon, '=>', counts[mostCommon])
+print('pixels:', img.size[0]*img.size[1])
+print('distinct pixel count:', len(rgbDict))
+mostCommon = max((rgbDict[rgb][0], rgb) for rgb in rgbDict)
+print('most common pixel:', mostCommon[1], '=>', mostCommon[0])
 
-kcoords = initalizeCentroids(pixelNoLocation, setPixelNL, k)
-print('random means:', kcoords)
-print("Centroids initialized; time taken so far", time.time()-start, end='\n\n')
-
-categories = categorize(pixels, kcoords)
-
-net = [len(categories[k]) for k in categories]
-print('starting sizes', net)
+centroids = initalizeCentroids(rgbDict, k)
+# print('random means:', centroids, end='\n\n')
 
 count = 0
+centCounts = [0]*k
+net = []
 while(net != [0]*k):
     count += 1
-    kcoords = reposition(categories)
-    newCategories = categorize(pixels, kcoords)
-    net = [len(newCategories[k]) - len(categories[k]) for k in categories]
-    categories = newCategories
-    print(f'diff {count}: {net} -- time taken:', time.time()-start)
+    rgbDict, newCentCounts, centroids = categorize_and_reposition(rgbDict, centroids)
+    net = [newCentCounts[i]-centCounts[i] for i in range(len(centCounts))]
+    centCounts = newCentCounts
+    # print(f'diff {count}: {net}-- time taken: {time.time()-start}')
 
 print()
 print('Final means:')
-count = 0
-for cent in categories:
-    count+=1
-    print(f'{count}: {tuple(kcoords[cent])} => {len(categories[cent])}')
-    for point in categories[cent]:
-        x,y = point[1]
-        pix[x,y] = tuple([round(channel) for channel in kcoords[cent]])
+for i,cent in enumerate(centroids):
+    print(f'{i+1}: {cent} => {centCounts[i]}')
+
+centroids = [tuple(round(cent[i]) for i in range(3)) for cent in centroids]
+for x in range(img.size[0]):
+    for y in range(img.size[1]):
+        currRGB = pix[x,y]
+        newRGB = centroids[rgbDict[currRGB][1]]
+        pix[x,y] = newRGB
+
 
 img.save('kmeans/{}.png'.format('2021kganotra'), 'PNG')
 
-kcoords = [(round(rgb[0]), round(rgb[1]), round(rgb[2])) for rgb in kcoords]
 seen = set()
-regionCount = {cent:0 for cent in kcoords}
+regionCount = {cent:0 for cent in centroids}
 print()
 for x in range(img.size[0]):
     for y in range(img.size[1]):
