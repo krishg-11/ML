@@ -10,11 +10,7 @@ def distance(p1, p2): #finds the distance between p1 and p2
     return sum((p1[i]-p2[i])**2 for i in range(len(p1)))
 
 def categorize_and_reposition(rgbDict, centroids):
-    centDistances = []
-    for cent1 in range(len(centroids)):
-        for cent2 in range(cent1+1, len(centroids)):
-            centDistances.append(distance(centroids[cent1], centroids[cent2]))
-    minCentDist = min(centDistances)/4
+    minCentDist = min(distance(cent1, cent2) for i1,cent1 in enumerate(centroids) for i2,cent2 in enumerate(centroids) if i2>i1)/4
 
     centCounts = [0]*len(centroids)
     centSums = [[0,0,0] for i in range(len(centroids))]
@@ -27,15 +23,14 @@ def categorize_and_reposition(rgbDict, centroids):
         else:
             for icent, cent in enumerate(centroids):
                 if(icent == centInd): continue
-                dist = distance(cent, rgb)
-                if(dist < minCentDist):
+                elif((dist:=distance(cent, rgb)) < minCentDist):
                     closestCentInd = icent
                     break
                 distances.append((dist, icent))
         if(closestCentInd == -1):
             closestCentInd = min(distances)[1]
 
-        rgbDict[rgb] = [occurences, closestCentInd]
+        rgbDict[rgb][1] = closestCentInd
         centCounts[closestCentInd] += occurences
         for i in range(3):
             centSums[closestCentInd][i] += occurences*rgb[i]
@@ -45,23 +40,6 @@ def categorize_and_reposition(rgbDict, centroids):
         new_centroids.append(new_cent)
     return rgbDict, centCounts, new_centroids
 
-
-
-# def reposition(rgbDict, k): #given rgb dictionary, returns centroid list of new positions
-#     rgbLen = 3
-#     centroids = [[0]*rgbLen]*k
-#     centroidCounts = [0]*k
-#     for rgb in rgbDict:
-#         occurences, centInd = rgbDict[rgb]
-#         centroids[centInd] = [centroids[centInd][i]+rgb[i]*occurences for i in range(rgbLen)]
-#         centroidCounts[centInd] += occurences
-#     return [tuple(centroids[centInd][i]/centroidCounts[centInd] for i in range(rgbLen)) for centInd in range(k)]
-
-
-'''
-{(rgb): [occurences, centroidIndex]}
-[centroid1, centroid2,...]
-'''
 
 def areaFill(pix, x, y):
     global seen
@@ -73,33 +51,30 @@ def areaFill(pix, x, y):
             for deltay in [-1, 0, 1]:
                 newx = x+deltax
                 newy = y+deltay
-                if((newx,newy) not in seen and newx>=0 and newx<img.size[0] and newy>=0 and newy<img.size[1] and pix[newx,newy]==pix[x,y]):
+                if((newx,newy) not in seen and img.size[0]>newx>=0 and img.size[1]>newy>=0 and pix[newx,newy]==pix[x,y]):
                     queue.append((newx,newy))
                     seen.add((newx,newy))
 
 def initalizeCentroids(rgbDict, count):
-    # kcoords = [random.choice(allrgb)]
-    # prob = [distance(pixel, kcoords[0]) for pixel in allrgb]
-    # for i in range(count-1):
-    #     print(kcoords)
-    #     kcoords.append(random.choices(population=allrgb, weights=prob)[0])
-    #     prob = [min(distance(pixel, kcoords[i]) for i in range(len(kcoords))) for pixel in pixels]
-    #
-    # return kcoords
-
     allrgb = list(rgbDict.keys())
-    kcoords = []
-    for i in range(count):
-        add = random.choice(allrgb)
-        while(add in kcoords):
-            add = random.choice(allrgb)
-        kcoords.append(add)
-    return kcoords
+
+    centroids = [random.choice(allrgb)]
+    for i in range(count-1):
+        if(count >= 6):
+            prob = [min(distance(rgb, centroids[i]) for i in range(len(centroids))) for rgb in allrgb]
+            add = max(enumerate(allrgb), key= lambda i: prob[i[0]])[1]
+            # add = random.choices(population=allrgb, weights=prob)[0]
+        else:
+            while((add:=random.choice(allrgb)) in centroids):
+                continue
+        centroids.append(add)
+    print(centroids)
+    return centroids
 
 
 start = time.time()
 #take in input
-for input in sys.argv[1:]:
+for input in args:
     if(input.isnumeric()):
         k = int(input)
     else:
@@ -133,7 +108,7 @@ while(net != [0]*k):
     rgbDict, newCentCounts, centroids = categorize_and_reposition(rgbDict, centroids)
     net = [newCentCounts[i]-centCounts[i] for i in range(len(centCounts))]
     centCounts = newCentCounts
-    # print(f'diff {count}: {net}-- time taken: {time.time()-start}')
+    print(f'diff {count}: {net}-- time taken: {time.time()-start}')
 
 print()
 print('Final means:')
@@ -144,8 +119,7 @@ centroids = [tuple(round(cent[i]) for i in range(3)) for cent in centroids]
 for x in range(img.size[0]):
     for y in range(img.size[1]):
         currRGB = pix[x,y]
-        newRGB = centroids[rgbDict[currRGB][1]]
-        pix[x,y] = newRGB
+        pix[x,y] = centroids[rgbDict[currRGB][1]]
 
 
 img.save('kmeans/{}.png'.format('2021kganotra'), 'PNG')
@@ -166,3 +140,8 @@ print(', '.join([str(x) for x in regionCount.values()]))
 
 print('total time:', time.time()-start)
 #img.show()
+
+'''
+rgbDict --> {(rgb): [occurences, centroidIndex]}
+centroids --> [(centroid1rgb), (centroid2rgb),...]
+'''
