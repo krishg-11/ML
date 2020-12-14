@@ -59,7 +59,7 @@ def initalizeCentroids(rgbDict, count):
     allrgb = list(rgbDict.keys())
 
     centroids = [random.choice(allrgb)]
-    for i in range(count-1):
+    for _ in range(count-1):
         if(count >= 6):
             prob = [min(distance(rgb, centroids[i]) for i in range(len(centroids))) for rgb in allrgb]
             add = max(enumerate(allrgb), key= lambda i: prob[i[0]])[1]
