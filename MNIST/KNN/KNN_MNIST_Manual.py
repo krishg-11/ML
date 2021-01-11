@@ -4,20 +4,15 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 import time
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+        
 def distance(p1, p2):  # finds the squared euclidean distance between p1 and p2
     return sum((p1[i]-p2[i])**2 for i in range(len(p1)))
 
 def findNearest(point, dict_of_points, k):
-    distances = []
-    for point2 in dict_of_points:
-        dist = distance(point, point2)
-        ind = 0
-        while(ind < len(distances) and dist > distances[ind][0]):
-            ind += 1
-        distances.insert(ind, (dist, point2))
-        
-    return {(key:=distances[i][1]):dict_of_points[key] for i in range(min(k, len(distances)))}
+    distances = sorted([(distance(point, point2), point2) for point2 in dict_of_points])
+    return {(key := distances[i][1]): dict_of_points[key] for i in range(min(k, len(distances)))}
 
 def mode(iterable):
     iterable_counts = {x:0 for x in iterable}
@@ -42,8 +37,22 @@ k_closest_means = 1 #lower --> faster; higher --> more accurate/true to KNN
 k_nearest_neighbors = 1
 
 start = time.time()
+
+# scaler = StandardScaler()
+# scaler.fit(X_train)
+# X_train = scaler.transform(X_train)
+# X_test = scaler.transform(X_test)
+
+# pca = PCA(0.95)
+# pca.fit(X_train)
+
+
+# X_train = pca.transform(X_train)
+# X_test = pca.transform(X_test)
+
 # kmeans
 kmeans_model = MiniBatchKMeans(n_clusters=k_means, random_state=42, n_init=1).fit(X_train)
+print('time taken for minibatchkmeans:', time.time()-start)
 kmeans_y_pred = kmeans_model.labels_
 kmeans_centroids = [tuple(centroid) for centroid in kmeans_model.cluster_centers_]
 kmeans_info = {centroid:{} for centroid in kmeans_centroids}
@@ -59,7 +68,7 @@ for test_point in X_test:
     centroids = findNearest(test_point, kmeans_info, k_closest_means)
     all_closest_points = {point:centroids[centroid][point] for centroid in centroids for point in centroids[centroid]}
     num_points_checked.append(len(all_closest_points))
-    if(len(num_points_checked) == 2000): print("2k test cases done; 1/5 done")
+    if(len(num_points_checked) == 10): print("10 test cases done; 1/1000 done; time taken:", time.time()-start)
     k_closest_points = findNearest(test_point, all_closest_points, k_nearest_neighbors)
     labels = [k_closest_points[point] for point in k_closest_points]
     label = mode(labels)
@@ -75,9 +84,13 @@ print("Average number of points checked:", sum(num_points_checked)/len(num_point
     
     
 '''
-for each test point:
-    find x closest means from kmeans dictionary
-    find distance to every train point (squared euclidean distance) in lists from x means (use insertion sort to store)
-    find k closest distances and find mode of labels
+Possible speedups:
+    - ball tree (ball tree better than kd tree for large mnist) -- use sklearn ball tree
+    - improve sorting of distances -- using linked list with insertion sort?
+        - test which is fastest of current 2 and new one ^
+    - pca or cnn
+    - different distance metric
+    -  
+    
 '''
 
