@@ -17,7 +17,7 @@ import keras
 X_train = X_train.reshape(X_train.shape[0], -1)
 X_test = X_test.reshape(X_test.shape[0], -1)
 
-print('finished loading in data')
+print("Data Shapes before PCA:", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
 start = time.time()
 
@@ -29,18 +29,14 @@ X_test = scaler.transform(X_test)
 pca = PCA(0.95)
 pca.fit(X_train)
 
-
 X_train = pca.transform(X_train)
 X_test = pca.transform(X_test)
 
-print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+print("Data Shapes after PCA:", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-# for k in range(1,100):
 k=2
 
-
 knn = KNeighborsClassifier(n_neighbors=k).fit(X_train, y_train)
-print('finished training')
 accuracy = knn.score(X_test, y_test)
 
 print(f"Accuracy: {accuracy} with k={k}")
