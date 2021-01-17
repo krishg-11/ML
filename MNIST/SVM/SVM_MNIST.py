@@ -19,16 +19,16 @@ X_test = X_test.reshape(X_test.shape[0], -1)
 
 print("Shape before PCA:", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-scaler = StandardScaler()
-scaler.fit(X_train)
-X_train = scaler.transform(X_train)
-X_test = scaler.transform(X_test)
+# scaler = StandardScaler()
+# scaler.fit(X_train)
+# X_train = scaler.transform(X_train)
+# X_test = scaler.transform(X_test)
 
-pca = PCA(0.95)
-pca.fit(X_train)
+# pca = PCA(0.95)
+# pca.fit(X_train)
 
-X_train = pca.transform(X_train)
-X_test = pca.transform(X_test)
+# X_train = pca.transform(X_train)
+# X_test = pca.transform(X_test)
 
 print("Shape after PCA:", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
@@ -49,6 +49,12 @@ Mini dataset w/ PCA:
 Accuracy: 0.9822222222222222
 Time taken: 0.1590561866760254
 
+Full Dataset w/o PCA:
+Accuracy: 0.9792
+Time taken: 856.4238708019257
+
 Full dataset w/ PCA:
+Accuracy: 0.9686
+Time taken: 740.8431372642517
 
 '''
