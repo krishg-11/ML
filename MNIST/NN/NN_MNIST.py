@@ -52,11 +52,18 @@ checkpoint_cb = keras.callbacks.ModelCheckpoint(
     "my_mnist_model.h5", save_best_only=True)
 
 #%% Train Model and Save
+start = time.time()
 history = model.fit(X_train, y_train, epochs=100,
                     validation_data=(X_valid, y_valid),
                     callbacks=[early_stopping_cb, checkpoint_cb])
-keras.models.save_model("my_mnist_model.h5", "my_mnist_model.h5")
+print("Time taken to train:", time.time()-start)
+model.save("my_mnist_model.h5")
 
 #%% Test Model
 model = keras.models.load_model("my_mnist_model.h5")  # rollback to best model
 model.evaluate(X_test, y_test)
+# %%
+'''
+Training Time: ~360 seconds
+Accuracy: 0.9776
+'''
